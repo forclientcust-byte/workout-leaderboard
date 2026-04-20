@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Машины спорта · Рейтинг 2026</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background: #0a0a0a; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .tabular { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body class="text-neutral-100 antialiased">
+
+<main class="min-h-screen">
+
+<!-- HERO -->
+<section
+  class="relative overflow-hidden border-b border-white/5"
+  style="background-image: linear-gradient(rgba(5,5,10,0.78), rgba(5,5,10,0.92)), url('https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=1600&q=80'); background-size: cover; background-position: center;"
+>
+  <div class="max-w-6xl mx-auto px-6 pt-16 pb-12">
+    <div class="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-orange-400 font-semibold">
+      <span class="inline-block w-6 h-px bg-orange-400"></span>
+      Машины спорта · 2026
+    </div>
+    <h1 class="mt-4 text-5xl md:text-6xl font-black tracking-tight">Рейтинг тренировок</h1>
+    <p class="mt-3 text-neutral-300 text-lg max-w-xl">
+      Прогресс 20 участников по годовому плану. Данные обновляются автоматически из сообщений в Telegram.
+    </p>
+
+    <div id="metrics" class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+
+    <div class="mt-8">
+      <div id="groupLabels" class="flex justify-between text-xs text-neutral-400 mb-2"></div>
+      <div class="relative h-3 rounded-full bg-white/10 overflow-hidden">
+        <div id="groupExpectedLine" class="absolute top-0 bottom-0 w-[3px] -ml-[1px] bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)] z-10"></div>
+        <div id="groupBar" class="h-full bg-gradient-to-r from-emerald-400 to-lime-400 transition-all"></div>
+      </div>
+      <p class="mt-2 text-xs text-neutral-500">Оранжевая линия — где группа должна быть сегодня по линейному плану.</p>
+    </div>
+  </div>
+</section>
+
+<!-- LEADERBOARD -->
+<section class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-xl font-semibold mb-4 text-neutral-300">Участники · отсортировано по % выполнения</h2>
+  <div id="list" class="grid gap-3"></div>
+  <p class="text-xs text-neutral-600 mt-8 text-center">
+    Это статичное превью на момент 20 апреля 2026. В продакшене данные обновляются автоматически каждые 30 секунд из Telegram.
+  </p>
+</section>
+
+</main>
+
+<script>
+// === ДАННЫЕ ===
+const PARTICIPANTS = [
+  { first_name:"Annabella", last_name:"",                   hashtag:"pilatesprincess",      annual_goal:150, completed_workouts:59  },
+  { first_name:"Maria",     last_name:"Mishina-Milchinskaya",hashtag:"машинпресс",           annual_goal:100, completed_workouts:7   },
+  { first_name:"Евгения",   last_name:"Зеленова",           hashtag:"джентренит",           annual_goal:150, completed_workouts:70  },
+  { first_name:"Mikhail",   last_name:"Banchik",            hashtag:"банчикспорт",          annual_goal:100, completed_workouts:37  },
+  { first_name:"Александр", last_name:"Натрошвили",         hashtag:"сандро",               annual_goal:200, completed_workouts:98  },
+  { first_name:"Emiliya",   last_name:"Manvelyan",          hashtag:"милссновавформе2026",  annual_goal:175, completed_workouts:56  },
+  { first_name:"Марина",    last_name:"Мзс",                hashtag:"marimel",              annual_goal:120, completed_workouts:56  },
+  { first_name:"Natalia",   last_name:"Peryazeva",          hashtag:"вперед_к_шпагату",     annual_goal:150, completed_workouts:82  },
+  { first_name:"Ksenya",    last_name:"",                   hashtag:"ксюнаспорте",          annual_goal:130, completed_workouts:44  },
+  { first_name:"Ksenia",    last_name:"",                   hashtag:"ксю",                  annual_goal:170, completed_workouts:56  },
+  { first_name:"Ольга",     last_name:"",                   hashtag:"стройняшка",           annual_goal:175, completed_workouts:26  },
+  { first_name:"Kate",      last_name:"Degai",              hashtag:"слюбовьюктелу",        annual_goal:150, completed_workouts:44  },
+  { first_name:"Narine",    last_name:"Oganyan",            hashtag:"челленджнаринчо",      annual_goal:150, completed_workouts:59  },
+  { first_name:"Daria",     last_name:"Shkurenko",          hashtag:"дашанаспорте",         annual_goal:180, completed_workouts:30  },
+  { first_name:"Oleg",      last_name:"Gerasimov",          hashtag:"go2026",               annual_goal:300, completed_workouts:60  },
+  { first_name:"Alexandra", last_name:"Broytman",           hashtag:"движениежизнь",        annual_goal:115, completed_workouts:61  },
+  { first_name:"Irina",     last_name:"",                   hashtag:"irinav",               annual_goal:120, completed_workouts:11  },
+  { first_name:"Evgenia",   last_name:"Belotelova",         hashtag:"вдругмарафонаянеготова", annual_goal:100, completed_workouts:34 },
+  { first_name:"Ксения",    last_name:"Морозова",           hashtag:"чтобестьбулочки",      annual_goal:133, completed_workouts:22  },
+  { first_name:"Саша",      last_name:"Автухов",            hashtag:"сашавделе",            annual_goal:100, completed_workouts:5   },
+];
+
+// === Аватарки ===
+const AVATAR_POOL = [
+  "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80",
+  "https://images.unsplash.com/photo-1550345332-09e3ac987658?w=600&q=80",
+  "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80",
+  "https://images.unsplash.com/photo-1540496905036-5937c10647cc?w=600&q=80",
+  "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80",
+  "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=80",
+  "https://images.unsplash.com/photo-1549476464-37392f717541?w=600&q=80",
+  "https://images.unsplash.com/photo-1594737625785-a6cbdabd333c?w=600&q=80",
+  "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=600&q=80",
+  "https://images.unsplash.com/photo-1605296867424-35fc25c9212a?w=600&q=80",
+  "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=600&q=80",
+  "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=600&q=80",
+  "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80",
+  "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=600&q=80",
+  "https://images.unsplash.com/photo-1540206395-68808572332f?w=600&q=80",
+];
+
+function hashStr(s) { let h = 0; for (let i=0; i<s.length; i++) h = (h*31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
+function getAvatar(hashtag) { return AVATAR_POOL[hashStr(hashtag) % AVATAR_POOL.length]; }
+
+function expectedToday(annualGoal, now = new Date()) {
+  const y = now.getUTCFullYear();
+  const start = Date.UTC(y, 0, 1);
+  const end = Date.UTC(y+1, 0, 1);
+  const daysInYear = (end - start) / 86400000;
+  const daysPassed = Math.max(0, Math.min(daysInYear, (now.getTime() - start) / 86400000));
+  return (annualGoal * daysPassed) / daysInYear;
+}
+
+// === РЕНДЕР ===
+const now = new Date();
+const enriched = PARTICIPANTS.map(r => {
+  const percent = r.annual_goal > 0 ? (r.completed_workouts / r.annual_goal) * 100 : 0;
+  const expected = expectedToday(r.annual_goal, now);
+  return {
+    ...r,
+    completion_percent: percent,
+    expected_today: expected,
+    on_track: r.completed_workouts >= expected,
+    avatar: getAvatar(r.hashtag),
+  };
+}).sort((a, b) => {
+  if (b.completion_percent !== a.completion_percent) return b.completion_percent - a.completion_percent;
+  return b.completed_workouts - a.completed_workouts;
+});
+
+const totalGoal = PARTICIPANTS.reduce((s, p) => s + p.annual_goal, 0);
+const totalDone = PARTICIPANTS.reduce((s, p) => s + p.completed_workouts, 0);
+const totalExpected = PARTICIPANTS.reduce((s, p) => s + expectedToday(p.annual_goal, now), 0);
+const groupPct = (totalDone / totalGoal) * 100;
+const yearPct = (expectedToday(100, now));
+const groupOnTrack = totalDone >= totalExpected;
+
+// Метрики
+document.getElementById("metrics").innerHTML = `
+  ${metricHTML("Общая цель", totalGoal.toLocaleString("ru"), "тренировок в 2026", false, null)}
+  ${metricHTML("Выполнено", totalDone.toLocaleString("ru"), groupPct.toFixed(1) + "% от общей цели", true, null)}
+  ${metricHTML("План на сегодня", Math.round(totalExpected).toLocaleString("ru"),
+    groupOnTrack ? "✅ опережаем на " + Math.round(totalDone - totalExpected)
+                 : "⏳ отстаём на " + Math.round(totalExpected - totalDone),
+    false, groupOnTrack ? "good" : "warn")}
+`;
+
+// Подписи под общим прогресс-баром
+document.getElementById("groupLabels").innerHTML =
+  `<span>Прогресс года: ${yearPct.toFixed(1)}%</span>
+   <span>Прогресс группы: ${groupPct.toFixed(1)}%</span>`;
+
+// Общий бар
+document.getElementById("groupBar").style.width = Math.min(100, groupPct) + "%";
+document.getElementById("groupExpectedLine").style.left = Math.min(100, (totalExpected / totalGoal) * 100) + "%";
+
+// Список участников
+document.getElementById("list").innerHTML = enriched.map((r, i) => cardHTML(i + 1, r)).join("");
+
+// === Хелперы рендера ===
+function metricHTML(label, value, sub, accent, tone) {
+  const accentCls = accent
+    ? "bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-orange-400/30"
+    : "bg-white/5 border-white/10";
+  const toneCls = tone === "good" ? "text-emerald-300"
+                 : tone === "warn" ? "text-amber-300"
+                 : "text-neutral-400";
+  return `<div class="rounded-2xl border ${accentCls} p-5 backdrop-blur">
+    <div class="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold">${label}</div>
+    <div class="mt-2 text-4xl font-black tabular">${value}</div>
+    <div class="mt-1 text-sm ${toneCls}">${sub}</div>
+  </div>`;
+}
+
+function cardHTML(rank, r) {
+  const fullName = [r.first_name, r.last_name].filter(Boolean).join(" ").trim();
+  const pct = Math.min(100, r.completion_percent);
+  const expectedPct = Math.min(100, (r.expected_today / r.annual_goal) * 100);
+  const diff = r.completed_workouts - r.expected_today;
+  const rankCls = rank === 1 ? "bg-gradient-to-br from-yellow-300 to-amber-500 text-amber-950"
+                : rank === 2 ? "bg-gradient-to-br from-neutral-200 to-neutral-400 text-neutral-900"
+                : rank === 3 ? "bg-gradient-to-br from-amber-600 to-amber-800 text-amber-50"
+                : "bg-white/10 text-neutral-300";
+  const barCls = r.on_track ? "bg-gradient-to-r from-emerald-400 to-lime-400"
+                            : "bg-gradient-to-r from-orange-400 to-rose-400";
+  const diffCls = r.on_track ? "text-emerald-400" : "text-amber-400";
+
+  return `<article class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors">
+    <div class="flex items-center gap-4 p-4">
+      <div class="shrink-0 w-11 h-11 rounded-xl grid place-items-center font-black text-lg ${rankCls}">${rank}</div>
+      <img src="${r.avatar}" alt="" class="shrink-0 w-14 h-14 rounded-xl object-cover border border-white/10" loading="lazy" />
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-semibold text-base truncate">${fullName || "—"}</span>
+        </div>
+        <div class="text-xs text-neutral-500 mt-0.5">#${r.hashtag}</div>
+        <div class="mt-3 relative h-2 rounded-full bg-white/10 overflow-hidden">
+          <div class="absolute top-0 bottom-0 w-[3px] -ml-[1px] bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.7)] z-10" style="left: ${expectedPct}%" title="План на сегодня: ${Math.round(r.expected_today)}"></div>
+          <div class="h-full transition-all ${barCls}" style="width: ${pct}%"></div>
+        </div>
+      </div>
+      <div class="shrink-0 text-right">
+        <div class="text-2xl font-black tabular">${r.completion_percent.toFixed(1)}<span class="text-sm text-neutral-500 font-medium">%</span></div>
+        <div class="text-xs text-neutral-400 tabular mt-0.5">${r.completed_workouts}<span class="text-neutral-600"> / ${r.annual_goal}</span></div>
+        <div class="text-[11px] mt-1 tabular ${diffCls}">${r.on_track ? "+" : ""}${Math.round(diff)} vs план</div>
+      </div>
+    </div>
+  </article>`;
+}
+</script>
+</body>
+</html>
